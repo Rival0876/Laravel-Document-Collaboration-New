@@ -55,4 +55,14 @@ class DocumentController extends Controller
 
         return response()->json(['success' => true, 'message' => 'Versi berhasil disimpan!']);
     }
+
+    // Fungsi baru untuk Auto-save (hanya update teks, tidak membuat riwayat/version baru)
+    public function autoSave(Request $request, Document $document)
+    {
+        $request->validate(['content' => 'required']);
+        
+        $document->update(['content' => $request->content]);
+
+        return response()->json(['success' => true]);
+    }
 }
