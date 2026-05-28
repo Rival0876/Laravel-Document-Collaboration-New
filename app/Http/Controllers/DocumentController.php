@@ -30,7 +30,10 @@ class DocumentController extends Controller
     // Membuka halaman editor dokumen
     public function show(Document $document)
     {
-        $versions = $document->versions()->with('user')->latest()->get();
+        // Ambil dokumen beserta riwayat versinya, urutkan dari yang terbaru
+        $versions = $document->versions()->latest()->get(); 
+        
+        // Kirim $versions ke halaman blade
         return view('editor', compact('document', 'versions'));
     }
 

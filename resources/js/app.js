@@ -34,9 +34,22 @@ if (document.getElementById('editor-container')) {
             };
 
             let activeUsers = [];
-            channel.here((users) => { activeUsers = users; updateUsersUI(activeUsers); })
-                   .joining((user) => { activeUsers.push(user); updateUsersUI(activeUsers); })
-                   .leaving((user) => { activeUsers.filter(u => u.id !== user.id); updateUsersUI(activeUsers); });
+            channel.here((users) => { 
+                activeUsers = users; 
+                updateUsersUI(activeUsers); 
+            })
+            .joining((user) => { 
+                // CEGAH DUPLIKAT: Cek dulu apakah user sudah ada di dalam list
+                if (!activeUsers.some(u => u.id === user.id)) {
+                    activeUsers.push(user); 
+                }
+                updateUsersUI(activeUsers); 
+            })
+            .leaving((user) => { 
+                // PERBAIKAN: Timpa variabel activeUsers dengan array yang baru (tanpa user yang keluar)
+                activeUsers = activeUsers.filter(u => u.id !== user.id); 
+                updateUsersUI(activeUsers); 
+            });
         }
 
         // Menyiapkan variabel untuk menahan timer autosave
@@ -57,10 +70,15 @@ if (document.getElementById('editor-container')) {
             ],
             onCreate({ editor }) {
                 const initialHTML = document.getElementById('initial-content').innerHTML;
-                // Jika Yjs mengosongkan editor, paksa isi dengan data dari database
-                if (editor.isEmpty && initialHTML.trim() !== '') {
-                    editor.commands.setContent(initialHTML);
-                }
+                
+                // Beri jeda 800ms agar WebRTC bisa sinkronisasi antar-peer terlebih dahulu
+                setTimeout(() => {
+                    // Jika setelah jeda editor MASIH kosong (berarti tidak ada teman yang online), 
+                    // baru kita muat dari database
+                    if (editor.isEmpty && initialHTML.trim() !== '') {
+                        editor.commands.setContent(initialHTML);
+                    }
+                }, 800);
             },
             onUpdate({ editor }) {
                 if (statusIndicator) statusIndicator.innerText = 'Mengetik...';
@@ -163,7 +181,25 @@ if (document.getElementById('editor-container')) {
             }
         });
 
+        // Jadikan fungsi global agar bisa dipanggil dari onclick HTML
+window.loadVersionHistory = function(versionId) {
+    const hiddenContentDiv = document.getElementById(`history-content-${versionId}`);
+    
+    if (hiddenContentDiv) {
+        // Ambil kode HTML dari dalam div
+        const htmlContent = hiddenContentDiv.innerHTML;
+        
+        // Timpa isi Tiptap Editor dengan konten dari masa lalu tersebut
+        // (Pastikan variabel 'editor' kamu bisa diakses secara global di sini)
+        window.editor.commands.setContent(htmlContent);
+    } else {
+        console.error("Gagal memuat konten versi ini.");
+    }
+};
+
     } catch (error) {
         console.error("Ada kendala pada Editor: ", error);
     }
+
+
 }
