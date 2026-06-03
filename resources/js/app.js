@@ -10,15 +10,16 @@ import Underline from '@tiptap/extension-underline';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import * as Y from 'yjs';
-import { WebrtcProvider } from 'y-webrtc';
+import { WebsocketProvider } from 'y-websocket';
 
 if (document.getElementById('editor-container')) {
     try {
         const config = window.APP_CONFIG;
 
-        // 1. SETUP YJS & WEBRTC (Untuk sinkronisasi teks super cepat)
+        // 1. SETUP YJS & WEBSOCKET (Pakai server lokal biar anti-ngelag)
         const ydoc = new Y.Doc();
-        const provider = new WebrtcProvider(`valdidocs-room-${config.docId}`, ydoc);
+        // Sesuaikan IP di bawah ini dengan IP WiFi kamu yang ada di URL browser!
+        const provider = new WebsocketProvider('ws://10.168.31.252:8000/', `valdidocs-room-${config.docId}`, ydoc);
 
         // 2. FITUR REVERB (Presence - Hanya jalan jika Echo aktif)
         if (window.Echo) {
@@ -49,7 +50,12 @@ if (document.getElementById('editor-container')) {
                 // PERBAIKAN: Timpa variabel activeUsers dengan array yang baru (tanpa user yang keluar)
                 activeUsers = activeUsers.filter(u => u.id !== user.id); 
                 updateUsersUI(activeUsers); 
-            });
+            })
+            .listen('DocumentUpdated', (e) => {
+        // 🔥 ISI KONTEN EDITOR DI HP/LAPTOP LAIN OTOMATIS BERUBAH DISINI!
+        // Contoh jika pakai editor biasa: editor.setContent(e.content)
+        console.log('Ada perubahan live:', e.content);
+    });
         }
 
         // Menyiapkan variabel untuk menahan timer autosave

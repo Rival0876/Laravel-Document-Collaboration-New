@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Document;
 use App\Models\DocumentVersion;
+use App\Events\DocumentUpdated;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -65,6 +66,10 @@ class DocumentController extends Controller
         $request->validate(['content' => 'required']);
         
         $document->update(['content' => $request->content]);
+
+        // 🔥 2. BROADCAST DISINI BIAR SAMPAI KE HP/LAPTOP LAIN SECARA LIVE
+        // .toOthers() fungsinya agar yang ngetik gak dapet kiriman balikan dari teksnya sendiri
+        broadcast(new DocumentUpdated($document, $request->content, Auth::id()))->toOthers();
 
         return response()->json(['success' => true]);
     }
